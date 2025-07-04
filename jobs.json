@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "parameters": {
+        "url": "https://connect.prusa3d.com/api/printer/jobs",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.PRUSA_TOKEN }}"
+            }
+          ]
+        }
+      },
+      "name": "Get Jobs from Prusa Connect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "id": "2",
+      "parameters": {
+        "functionCode": "const jobs = items[0].json.jobs || [];\nreturn jobs.map(job => ({ json: job }));"
+      },
+      "name": "Split Jobs",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "id": "3",
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "1abcdEfghIjklMNopQRstuVwxYz123456", 
+        "range": "List1!A:E",
+        "options": {
+          "valueInputMode": "USER_ENTERED"
+        },
+        "valueRangeUi": {
+          "values": [
+            [
+              "={{$json.id}}",
+              "={{$json.name}}",
+              "={{$json.created_at}}",
+              "={{$json.status}}",
+              "={{$json.material || 'N/A'}}"
+            ]
+          ]
+        }
+      },
+      "name": "Add Row to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-google-credentials-id",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get Jobs from Prusa Connect": {
+      "main": [
+        [
+          {
+            "node": "Split Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Jobs": {
+      "main": [
+        [
+          {
+            "node": "Add Row to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
